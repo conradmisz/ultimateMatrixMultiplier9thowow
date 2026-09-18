@@ -27,6 +27,7 @@ TESTS = gpio mac_lane adder_tree scratchpad result_fifo bus_decoder ram32 dotp_c
 
 VFLAGS_ram32 = -GBYTES=4096 -GINIT_FROM_PLUSARG=1
 ARGS_ram32   = +hex=tb/data/ram_test.hex
+ARGS_soc_top = +hex=firmware/firmware.hex
 
 .PHONY: all lint firmware test test-models clean waves
 .SECONDEXPANSION:
