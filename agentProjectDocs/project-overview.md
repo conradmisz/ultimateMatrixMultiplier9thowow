@@ -60,7 +60,7 @@ judgement, plus the author as the person who will later bring it up on the board
 
 ### In Scope
 
-- Everything listed under Features, the top-level Makefile, and a `docs/README.md` describing
+- Everything listed under Features, the top-level Makefile, and a root `README.md` describing
   the architecture, memory map, and how to run tests.
 - Verilator lint clean RTL.
 
