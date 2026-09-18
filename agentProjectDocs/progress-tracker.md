@@ -49,3 +49,14 @@ under ~60 lines.
 - Host is macOS Apple Silicon; Efinity is a later, VM-based phase.
 - Deferred minor review findings are listed in the SDD ledger and were triaged in the final
   whole-branch review.
+
+## Deferred from the final review (board phase or later)
+
+- result_fifo: a push while full is dropped even if a pop retires an entry on the same cycle (unreachable in this SoC).
+- dotp_ctrl: a soft reset landing on the final DRAIN cycle still pushes (push_valid is combinational); accepted race.
+- scratchpad: `int'()` index arithmetic and a bare `int` local; prefer packed index expressions before synthesis. The combinational 8-byte row read will infer distributed RAM, deliberately (128 B).
+- adder_tree is a linear accumulate chain the synthesizer will balance; name promises a tree.
+- bus_decoder: `NUM_REGIONS[REGION_BITS-1:0]` is correct up to 15 regions only.
+- tb_ram32: `WORDS = 1024` must match `-GBYTES=4096` by hand; unused `<cstring>` include.
+- bus.h: timeout bound 16 is a bare literal in two places.
+- gpio.sv: literal 32 in the zero-extension (no bus-width package constant exists).
