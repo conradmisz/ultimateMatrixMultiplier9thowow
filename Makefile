@@ -6,7 +6,7 @@ ARGS      ?=
 LINTFLAGS = -Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-PINCONNECTEMPTY
 
 VFLAGS = $(LINTFLAGS) --cc --exe --build -j 0 --trace-fst --x-assign unique --x-initial unique \
-         -Irtl -Itb/common -Ifirmware -CFLAGS "-std=c++17 -Itb/common -Ifirmware -O1"
+         -Irtl -Itb/common -Ifirmware -CFLAGS "-std=c++17 -I$(CURDIR)/tb/common -I$(CURDIR)/firmware -O1"
 
 PKG      = rtl/soc_pkg.sv
 VENDOR   = rtl/vendor/picorv32.vlt rtl/vendor/picorv32.v
@@ -25,7 +25,7 @@ SRCS_soc_top     = $(PKG) rtl/gpio.sv rtl/mac_lane.sv rtl/adder_tree.sv rtl/scra
 
 TESTS = gpio mac_lane adder_tree scratchpad result_fifo bus_decoder ram32 dotp_ctrl soc_top
 
-.PHONY: all lint firmware test test-models clean waves $(addprefix test-,$(TESTS))
+.PHONY: all lint firmware test test-models clean waves
 .SECONDEXPANSION:
 
 all: test
