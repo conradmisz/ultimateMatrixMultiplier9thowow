@@ -146,3 +146,32 @@ Format:
 - **Why:** One nibble to decode, room to grow, keeps the decoder a lookup table.
 - **Alternatives rejected:** Tightly packed regions (fiddlier decode for no benefit).
 - **Supersedes:** —
+
+## 2026-09-18 — Toolchain: riscv64-elf-gcc targets rv32im; PicoRV32 ENABLE_MUL=1
+
+- **Decision:** Firmware compiles with `-march=rv32im -mabi=ilp32`; PicoRV32 is instantiated with
+  `ENABLE_MUL=1` so the software reference multiply is a native `mul`. Toolchain: riscv64-elf-gcc
+  (Homebrew, gcc 16.2.0) targets rv32im — confirmed by `riscv64-elf-gcc -march=rv32im -mabi=ilp32
+  -O2 -c t.c -o t.o && riscv64-elf-objdump -d t.o` emitting a `mul a0,a0,a1` instruction.
+- **Why:** Plain rv32i would pull libgcc's `__mulsi3` under `-nostdlib`; the hardware multiplier is
+  free on this FPGA and keeps the firmware self-contained.
+- **Alternatives rejected:** rv32i + `-lgcc` (works but adds a library dependency for one routine).
+- **Supersedes:** —
+
+## 2026-09-18 — Peripheral bus timing: registered one-cycle ready
+
+- **Decision:** Every peripheral accepts a transaction on the cycle `bus_sel && !bus_ready`, performs
+  its side effect and registers `bus_rdata` on that edge, and drives `bus_ready` high for exactly one
+  cycle. No combinational ready.
+- **Why:** One rule for registers and memories alike; safe with PicoRV32's mem_ready sampling; makes
+  the C++ `bus_read`/`bus_write` helpers trivial.
+- **Alternatives rejected:** Combinational same-cycle ready (faster by one cycle, but a second timing
+  convention to test).
+- **Supersedes:** —
+
+## 2026-09-18 — Lint policy: -Wall minus three style warnings, no per-file suppression
+
+- **Decision:** All Verilator invocations use `-Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-PINCONNECTEMPTY`. Vendor warnings are silenced only through `rtl/vendor/picorv32.vlt`. No `lint_off` pragmas or `-Wno-*` flags for individual non-vendor files.
+- **Why:** Every bus peripheral leaves upper address and data bits unused and the top level leaves optional outputs unconnected; those three warnings would fire on correct code. Everything else in -Wall stays on.
+- **Alternatives rejected:** Per-signal `unused` idioms (noise in every module); per-file lint_off (hides real problems).
+- **Supersedes:** —
