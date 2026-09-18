@@ -10,33 +10,42 @@ under ~60 lines.
 
 ## Current Phase
 
-- In progress (Task 1 done: toolchain, skeleton, soc_pkg, shared headers, test harness).
+- Simulation phase complete.
 
 ## Current Goal
 
-- Produce the build plan, then implement leaf modules bottom-up with their testbenches.
+- None; awaiting the board phase (Efinity, board bring-up).
 
 ## Completed
 
-- Architecture research and decisions D1–D11 (`docs/research/2026-09-18-architecture-research.md`).
-- Kickoff context files (`agentProjectDocs/`, `CLAUDE.md`).
-- Task 1: toolchain verified (riscv64-elf-gcc builds rv32im), repo skeleton, `rtl/soc_pkg.sv`,
-  `rtl/vendor/picorv32.{v,vlt}`, `firmware/memmap.h`, `firmware/dotp_ref.h`, `firmware/makehex.py`,
-  `tb/common/{harness,bus,models}.h`, `tb/test_models.cpp`, top-level and firmware `Makefile`s.
+- Task 1: toolchain, repo skeleton, `soc_pkg.sv`, `rtl/vendor/picorv32.{v,vlt}`, shared headers, test harness.
+- Task 2: `gpio` module and testbench.
+- Task 3: `mac_lane` module and testbench.
+- Task 4: `adder_tree` module and testbench.
+- Task 5: `scratchpad` module and testbench.
+- Task 6: `result_fifo` module and testbench.
+- Task 7: `bus_decoder` module and testbench.
+- Task 8: `ram32` module and testbench.
+- Task 9: `dotp_ctrl` module and testbench.
+- Task 10: `soc_top` integration and testbench.
+- Task 11: firmware (`main.c`, `start.S`, `sections.lds`, `memmap.h`) and full-system verification (244,876 cycles).
+- Task 12: README, agent context sync, clean-checkout verification.
 
 ## In Progress
 
-- None yet.
+- None.
 
 ## Next Up
 
-- Task 2: gpio.
+- Board phase: Efinity VM, Interface Designer, LED/UART.
 
 ## Open Questions
 
-- Does `dotp_ctrl` push to the FIFO on every done, or only when LENGTH > 0? Proposed: every done.
+- None; resolved items are recorded in `decisions.md`.
 
 ## Session Notes
 
 - Research prompt used for kickoff: `docs/research/kickoff-prompt.md`.
 - Host is macOS Apple Silicon; Efinity is a later, VM-based phase.
+- Deferred minor review findings are listed in the SDD ledger and were triaged in the final
+  whole-branch review.

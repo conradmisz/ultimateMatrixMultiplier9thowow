@@ -11,17 +11,21 @@
 
 ## SystemVerilog
 
-- `always_ff @(posedge clk)` for state, `always_comb` for logic. No plain `always`.
+- `always_ff @(posedge clk)` for state, `always_comb` for logic. Continuous `assign` is allowed
+  for simple wiring. No plain `always` blocks.
 - Synchronous active-low reset `rst_n` in every sequential block. No asynchronous resets.
 - `logic` everywhere; no `reg`/`wire` in new code. Signed arithmetic uses `logic signed`.
 - Enumerated types for FSM states, defined in the module or `soc_pkg.sv`.
 - Every module has a parameter list even if it only forwards package defaults.
-- No `initial` blocks except `$readmemh` in `ram_instr`. No `#` delays in RTL.
+- No `initial` blocks except `$readmemh` in `ram32` when `INIT_FROM_PLUSARG` is set. No `#`
+  delays in RTL.
 - Widths explicit on every port; no implicit truncation without a comment naming the intent.
 - Memories are inferred `logic [W-1:0] mem [DEPTH]` arrays; multiplies are `*`. No vendor
   primitives, no `(* ram_style *)` attributes in this phase.
-- Must pass `verilator --lint-only -Wall` with no warnings for non-vendor files. Vendor file
-  warnings are suppressed with a `-Wno-*` list in the Makefile, never by editing the vendor file.
+- Must pass `make lint`, which runs Verilator with `-Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM
+  -Wno-PINCONNECTEMPTY` (the project lint policy, see decisions.md). Vendor warnings are
+  silenced only through `rtl/vendor/picorv32.vlt`; no per-file or per-line suppression on our
+  RTL.
 
 ## C++ Testbenches
 
@@ -67,6 +71,8 @@
 - Never change a constant in `soc_pkg.sv` without the matching change in `memmap.h`.
 - Never read RING_HI in firmware or a testbench except from the single drain function.
 - Never use asynchronous reset, `always @*`, or `#` delays in RTL.
-- Never suppress a lint warning on a non-vendor file; fix the RTL.
+- Never suppress a lint warning on a non-vendor file with a `lint_off` pragma or per-file
+  `-Wno-*`; the only warnings silenced project-wide are the three in the `make lint` policy
+  above, and vendor warnings go only in `rtl/vendor/picorv32.vlt`.
 - Never let a testbench pass by default: a test with zero checks executed must fail.
 - Never add a Python, cocotb, or other simulation dependency without an entry in decisions.md.

@@ -175,3 +175,14 @@ Format:
 - **Why:** Every bus peripheral leaves upper address and data bits unused and the top level leaves optional outputs unconnected; those three warnings would fire on correct code. Everything else in -Wall stays on.
 - **Alternatives rejected:** Per-signal `unused` idioms (noise in every module); per-file lint_off (hides real problems).
 - **Supersedes:** —
+
+## 2026-09-18 — PicoRV32 multiplier: ENABLE_MUL=1, ENABLE_FAST_MUL=0
+
+- **Decision:** PicoRV32 keeps its slow shift-add multiplier (`ENABLE_MUL=1`, `ENABLE_FAST_MUL`
+  left at its default 0); firmware is compiled rv32im.
+- **Why:** Unspecified by the plan; correctness first. The resulting ~245k-cycle firmware run is
+  acceptable in simulation.
+- **Alternatives rejected:** `ENABLE_FAST_MUL=1` (single-cycle multiply, but more logic, and not
+  needed for a sim-only phase); rv32i plus libgcc's `__mulsi3` (adds a library dependency for one
+  routine, see the toolchain decision above).
+- **Supersedes:** —

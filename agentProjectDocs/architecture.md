@@ -12,7 +12,7 @@ Source of truth for the reasoning behind every choice here:
 | RTL          | SystemVerilog (IEEE 1800-2017)     | All hardware except the vendor core           |
 | Control core | PicoRV32 (Verilog, `rtl/vendor/`)  | RV32I control plane, native mem port          |
 | Simulation   | Verilator 5.048, C++17 testbenches | Module and SoC verification, FST traces       |
-| Firmware     | C, riscv64-elf-gcc (rv32i/rv32im, ilp32) | Control program baked into instruction RAM    |
+| Firmware     | C, riscv64-elf-gcc (rv32im, ilp32) | Control program baked into instruction RAM; `ENABLE_MUL=1` |
 | Waveforms    | Surfer                             | Trace viewing                                 |
 | Build        | GNU Make                           | Firmware, testbench build/run, waves          |
 | Target (later) | Efinix Ti180 J484, Efinity       | Out of scope this phase                       |
@@ -20,7 +20,9 @@ Source of truth for the reasoning behind every choice here:
 ## System Boundaries
 
 - `rtl/` — every SystemVerilog module, one per file, plus `soc_pkg.sv` holding parameters and
-  the memory map. Owns all hardware behaviour.
+  the memory map. Owns all hardware behaviour. `ram32` is the one shared RAM module,
+  instantiated twice in `soc_top` (instruction RAM with `INIT_FROM_PLUSARG` set, data RAM
+  without).
 - `rtl/vendor/` — `picorv32.v` verbatim. Never edited.
 - `tb/` — one C++ testbench per module plus `tb_soc_top.cpp`; `tb/common/` owns the shared
   clock/reset/eval/trace helper and golden-model utilities (xorshift, dot product, queue).
@@ -31,9 +33,11 @@ Source of truth for the reasoning behind every choice here:
 
 ## Storage Model
 
-- **Instruction RAM** (16 KB, `ram_instr`): firmware code and read-only data, loaded from
-  `firmware.hex` with `$readmemh` at simulation start. Read-only at runtime by convention.
-- **Data RAM** (8 KB, `ram_data`): stack, globals, and the 16 stored reference results.
+- **Instruction RAM** (16 KB, `ram32` instance `u_instr`): firmware code and read-only data,
+  loaded from `firmware.hex` with `$readmemh` at simulation start (`INIT_FROM_PLUSARG`).
+  Read-only at runtime by convention.
+- **Data RAM** (8 KB, `ram32` instance `u_data`): stack, globals, and the 16 stored reference
+  results.
 - **Scratchpad A / B** (128 bytes each): the current input vectors. Written by the core, read
   by the accelerator. Contents are overwritten every iteration.
 - **Result FIFO** (16 x 48 bits): completed dot products until the core drains them.
@@ -72,10 +76,19 @@ written as two 32-bit bus words at offsets `8r` (low half, address bit 2 = 0) an
 Not applicable. Single bus master (the core); the accelerator has private ports to the
 scratchpads and FIFO that are not bus-accessible.
 
+## Top-Level Ports
+
+`soc_top` exposes `clk`, `rst_n`, `gpio_out` (the software-visible heartbeat/pass/fail/finished
+bits), plus three debug-only outputs with no bus-visible equivalent: `trap` (PicoRV32's trap
+output, wired straight through — asserted means the CPU halted on an illegal instruction or
+misaligned access, which the system test checks stays low), and `dbg_result_valid` /
+`dbg_result` (combinationally mirror the accelerator's FIFO-push handshake, `push_valid` /
+`push_data`, for waveform inspection without draining the FIFO).
+
 ## Environment and Setup
 
-- Tools: Verilator 5.048 (present), `brew install riscv64-elf-gcc surfer`. Verify the GCC accepts
-  `-march=rv32i -mabi=ilp32` before relying on it; fall back to xpack `riscv-none-elf-gcc`.
+- Tools: Verilator 5.048 (present), `brew install riscv64-elf-gcc surfer`. Homebrew
+  `riscv64-elf-gcc` 16.2 is verified to target rv32im/ilp32.
 - No env vars, no services, no secrets. `make firmware` produces the only generated input.
 - Host: macOS Apple Silicon. Efinity does not run here; board phase needs a Linux/Windows VM.
 
@@ -95,3 +108,6 @@ scratchpads and FIFO that are not bus-accessible.
    directly.
 7. `rtl/vendor/picorv32.v` is never modified; PicoRV32 is configured only through parameters at
    instantiation.
+8. Swapping scratchpad A and B in the wiring would be undetectable by `tb_soc_top`, because the
+   dot product is commutative; that wiring is verified by inspection of `soc_top.sv`, not by the
+   system test.
