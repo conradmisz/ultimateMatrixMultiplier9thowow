@@ -2,6 +2,6 @@
 lint_off -file "*rtl/vendor/picorv32.v"
 // picorv32.v's `timescale directive leaks past its own file (Verilator's
 // TIMESCALEMOD check is project-wide, not per-file), flagging every other
-// module in the build as "missing timescale". Suppress the rule globally
-// here rather than touching the vendor source or adding timescales project-wide.
-lint_off -rule TIMESCALEMOD
+// module in the build as "missing timescale". That waiver is applied globally
+// via -Wno-TIMESCALEMOD in the Makefile's LINTFLAGS (not here), so it also
+// covers `make lint`'s direct verilator invocation.

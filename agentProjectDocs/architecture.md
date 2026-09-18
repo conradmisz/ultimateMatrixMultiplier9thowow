@@ -54,7 +54,7 @@ not decoded further. Unmapped regions return ready with rdata 0 (no bus hang).
 | `0x0001_0000` | ram_data      | 8 KB, word addressed                                           |
 | `0x0002_0000` | scratchpad A  | 128 bytes, `int16_t[64]` layout                                |
 | `0x0003_0000` | scratchpad B  | 128 bytes, `int16_t[64]` layout                                |
-| `0x0004_0000` | dotp_ctrl     | 0x00 CTRL (W: bit0 start, bit1 soft reset), 0x04 STATUS (R: bit0 busy, bit1 done, bit2 fifo overflow sticky W1C), 0x08 LENGTH (RW, 1..64), 0x0C RESULT_LO (R), 0x10 RESULT_HI (R, bits 47:32) |
+| `0x0004_0000` | dotp_ctrl     | 0x00 CTRL (W: bit0 start, bit1 soft reset), 0x04 STATUS (R: bit0 busy, bit1 done, bit2 fifo overflow sticky W1C), 0x08 LENGTH (RW, 0..64; values above 64 clamp to 64), 0x0C RESULT_LO (R), 0x10 RESULT_HI (R, bits 47:32) |
 | `0x0005_0000` | result_fifo   | 0x00 RING_COUNT (R), 0x04 RING_LO (R, no side effect), 0x08 RING_HI (R, pops) |
 | `0x0006_0000` | gpio          | 0x00 OUT (RW: bit0 heartbeat, bit1 pass, bit2 fail, bit3 finished) |
 

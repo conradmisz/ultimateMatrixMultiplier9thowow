@@ -52,6 +52,17 @@ int main(int argc, char **argv) {
     CHECK(bus_read(h, DOTP_LENGTH) == 0, "length after reset");
     bus_write(h, DOTP_LENGTH, 64);
     CHECK(bus_read(h, DOTP_LENGTH) == 64, "length readback");
+    // LENGTH clamps on the full 32-bit written word, not just the low 7 bits.
+    bus_write(h, DOTP_LENGTH, 65);
+    CHECK(bus_read(h, DOTP_LENGTH) == 64, "length clamp 65 -> 64");
+    bus_write(h, DOTP_LENGTH, 128);
+    CHECK(bus_read(h, DOTP_LENGTH) == 64, "length clamp 128 -> 64");
+    bus_write(h, DOTP_LENGTH, 0xFFFFFFFFu);
+    CHECK(bus_read(h, DOTP_LENGTH) == 64, "length clamp 0xFFFFFFFF -> 64");
+    bus_write(h, DOTP_LENGTH, 0);
+    CHECK(bus_read(h, DOTP_LENGTH) == 0, "length readback 0");
+    bus_write(h, DOTP_LENGTH, 64);
+    CHECK(bus_read(h, DOTP_LENGTH) == 64, "length readback 64");
 
     Vec v; int cyc; bool once;
     // 1. Full-length random vectors.
@@ -84,6 +95,7 @@ int main(int argc, char **argv) {
     bus_write(h, DOTP_LENGTH, 64); feed(h, v);
     bus_write(h, DOTP_CTRL, CTRL_START_BIT);
     tick_fed(h, v);
+    CHECK(bus_read(h, DOTP_STATUS) & STATUS_BUSY_BIT, "expected busy mid-run");
     bus_write(h, DOTP_CTRL, CTRL_START_BIT);        // second start while busy
     int pushes = 0; for (int n = 0; n < 60; n++) { if (t.push_valid) pushes++; tick_fed(h, v); }
     CHECK(pushes == 1, "start-while-busy produced %d pushes", pushes);
@@ -91,9 +103,20 @@ int main(int argc, char **argv) {
     // 5. Overflow sticky: pulse in, read, W1C clears.
     t.fifo_overflow = 1; h.tick(); t.fifo_overflow = 0; h.tick();
     CHECK(bus_read(h, DOTP_STATUS) & STATUS_OVF_BIT, "overflow sticky not set");
-    CHECK(bus_read(h, DOTP_STATUS) & STATUS_OVF_BIT, "overflow sticky cleared by read");
+    CHECK(bus_read(h, DOTP_STATUS) & STATUS_OVF_BIT, "read must not clear overflow sticky");
     bus_write(h, DOTP_STATUS, STATUS_OVF_BIT);
     CHECK(!(bus_read(h, DOTP_STATUS) & STATUS_OVF_BIT), "W1C did not clear overflow");
+    // 5b. Coincident overflow pulse vs W1C clear on the same accept edge: the set must win.
+    // Driven manually (not via bus_write/bus_read, which each tick internally) so fifo_overflow
+    // is asserted on exactly the accept edge (bus_sel && !bus_ready).
+    t.bus_sel = 1; t.bus_addr = DOTP_STATUS; t.bus_wstrb = 0xF; t.bus_wdata = STATUS_OVF_BIT;
+    t.fifo_overflow = 1;
+    h.tick();                              // accept edge: W1C clear and overflow set race here
+    t.bus_sel = 0; t.bus_wstrb = 0; t.fifo_overflow = 0;
+    h.tick();
+    CHECK(bus_read(h, DOTP_STATUS) & STATUS_OVF_BIT, "coincident overflow must win over W1C clear");
+    bus_write(h, DOTP_STATUS, STATUS_OVF_BIT);
+    CHECK(!(bus_read(h, DOTP_STATUS) & STATUS_OVF_BIT), "W1C did not clear overflow after coincident case");
     // 6. Soft reset mid-run: no push, not busy, done clear, LENGTH kept.
     bus_write(h, DOTP_CTRL, CTRL_START_BIT); tick_fed(h, v); tick_fed(h, v);
     bus_write(h, DOTP_CTRL, CTRL_RESET_BIT);

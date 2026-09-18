@@ -2,6 +2,8 @@
 #include "memmap.h"
 #include "dotp_ref.h"
 
+_Static_assert(FW_ITERS <= FIFO_DEPTH, "FIFO cannot hold one result per iteration");
+
 static int64_t ref[FW_ITERS];   /* .bss, in data RAM */
 
 static inline void gpio_set(uint32_t v) { REG32(BASE_GPIO + GPIO_OUT) = v; }
@@ -47,6 +49,6 @@ int main(void) {
     gpio_set(gp);
     gp |= GPIO_FINISHED_BIT;
     gpio_set(gp);
-    (void)gpio_get();
+    (void)gpio_get();  /* exercises the GPIO read path */
     for (;;) { }
 }

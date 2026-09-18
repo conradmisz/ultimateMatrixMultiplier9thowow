@@ -3,7 +3,9 @@ CXX       ?= c++
 SEEDS     ?= 1 2
 ARGS      ?=
 
-LINTFLAGS = -Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-PINCONNECTEMPTY
+# -Wno-TIMESCALEMOD: picorv32.v's `timescale directive leaks project-wide (Verilator's
+# TIMESCALEMOD check isn't per-file); waived here rather than touching the vendor source.
+LINTFLAGS = -Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-PINCONNECTEMPTY -Wno-TIMESCALEMOD
 
 VFLAGS = $(LINTFLAGS) --cc --exe --build -j 0 --trace-fst --x-assign unique --x-initial unique \
          -Irtl -Itb/common -Ifirmware -CFLAGS "-std=c++17 -I$(CURDIR)/tb/common -I$(CURDIR)/firmware -O1"
@@ -29,6 +31,13 @@ VFLAGS_ram32 = -GBYTES=4096 -GINIT_FROM_PLUSARG=1
 ARGS_ram32   = +hex=tb/data/ram_test.hex
 ARGS_soc_top = +hex=firmware/firmware.hex
 
+# soc_top's firmware seed is fixed at build time (firmware.hex has no runtime RNG seeding),
+# so a second SEEDS pass would re-run the identical simulation and add no coverage.
+SEEDS_soc_top = 1
+
+# test-<name> targets are deliberately NOT listed here: GNU Make 4.4 treats a target that
+# appears only in .PHONY (with no other rule matching it literally) as already resolved and
+# skips the sim/tb_% pattern rule that would otherwise build/run it.
 .PHONY: all lint firmware test test-models clean waves
 .SECONDEXPANSION:
 # Keep sim/tb_<name> binaries around after each run (not deleted as chained-rule
@@ -49,7 +58,7 @@ sim/tb_%: $$(SRCS_$$*) tb/tb_%.cpp tb/common/harness.h tb/common/bus.h tb/common
 
 test-soc_top: firmware
 test-%: sim/tb_%
-	@for s in $(SEEDS); do sim/tb_$* --seed $$s $(ARGS_$*) $(ARGS) || exit 1; done
+	@for s in $(or $(SEEDS_$*),$(SEEDS)); do sim/tb_$* --seed $$s $(ARGS_$*) $(ARGS) || exit 1; done
 
 sim/test_models: tb/test_models.cpp tb/common/models.h firmware/dotp_ref.h
 	@mkdir -p sim

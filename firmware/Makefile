@@ -5,7 +5,8 @@ OBJDUMP  = $(CROSS)objdump
 CFLAGS   = -march=rv32im -mabi=ilp32 -O2 -Wall -Wextra -ffreestanding -nostdlib -nostartfiles \
            -fno-builtin -fno-common -I.
 LDFLAGS  = -T sections.lds -Wl,--gc-sections -Wl,-Map=firmware.map
-WORDS    = 4096   # 16 KB instruction RAM
+WORDS    = 4096
+# 16 KB instruction RAM
 
 all: firmware.hex
 

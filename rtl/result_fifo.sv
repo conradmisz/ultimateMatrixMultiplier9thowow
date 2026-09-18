@@ -11,7 +11,7 @@ module result_fifo
   output logic [31:0]                 bus_rdata,
   output logic                        bus_ready,
   // accelerator face
-  input  logic                        push_valid,
+  input  logic                        push_valid,  // single-cycle pulse; overflow detection relies on this
   input  logic [ACC_BITS-1:0]         push_data,
   output logic                        overflow,
   output logic [$clog2(FIFO_DEPTH):0] count

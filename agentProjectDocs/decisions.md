@@ -186,3 +186,22 @@ Format:
   needed for a sim-only phase); rv32i plus libgcc's `__mulsi3` (adds a library dependency for one
   routine, see the toolchain decision above).
 - **Supersedes:** —
+
+## 2026-09-18 — Lint policy update: add -Wno-TIMESCALEMOD; move waiver out of the vendor .vlt file
+
+- **Decision:** `make lint`'s Verilator invocation now waives four warnings:
+  `-Wall -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-PINCONNECTEMPTY -Wno-TIMESCALEMOD`. The
+  `TIMESCALEMOD` waiver moved from a `lint_off -rule TIMESCALEMOD` line inside
+  `rtl/vendor/picorv32.vlt` into the Makefile's `LINTFLAGS`. The `.vlt` file keeps its
+  `lint_off -file "*rtl/vendor/picorv32.v"` glob entry, unchanged.
+- **Why:** `lint_off -rule` inside a `.vlt` file applies the rule waiver globally to the whole
+  build (Verilator's per-file `lint_off -file` scoping does not extend to `-rule`), which made a
+  project-wide waiver look, at the read site, like it was scoped to the vendor file. Stating it
+  as a `-Wno-TIMESCALEMOD` flag next to the other three project-wide waivers keeps the policy in
+  one place and honest about its scope.
+- **Alternatives rejected:** Adding a `timescale directive to every non-vendor module (defeats
+  the point of not touching working RTL for a vendor-only issue); leaving the rule waiver in the
+  `.vlt` file (scoping is misleading, as above).
+- **Supersedes:** The lint policy decision above ("Lint policy: -Wall minus three style
+  warnings, no per-file suppression") now reads as four style warnings, not three; that entry is
+  left as written per the append-only rule.

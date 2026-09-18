@@ -164,7 +164,7 @@ The registers the processor sees, as byte offsets from `0x0004_0000`:
 | ------ | ---------- | ---------------- | -------------------------------------------------------- |
 | `0x00` | CTRL       | write            | bit 0 = start a dot product; bit 1 = reset the accelerator |
 | `0x04` | STATUS     | read             | bit 0 = busy; bit 1 = done; bit 2 = the result queue overflowed (stays set until the processor writes a 1 to clear it) |
-| `0x08` | LENGTH     | read and write   | how many elements to process this time, 1 to 64          |
+| `0x08` | LENGTH     | read and write   | how many elements to process this time, 0 to 64          |
 | `0x0C` | RESULT_LO  | read             | low 32 bits of the most recent result                    |
 | `0x10` | RESULT_HI  | read             | high 16 bits of the most recent result                   |
 

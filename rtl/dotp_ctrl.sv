@@ -80,7 +80,6 @@ module dotp_ctrl
       v1 <= (state == STREAM);
       v2 <= v1;
       if (v2) acc <= acc + ACC_BITS'(sum);
-      if (fifo_overflow) ovf_sticky <= 1'b1;
 
       // register interface
       if (accept) begin
@@ -93,13 +92,18 @@ module dotp_ctrl
           default:        bus_rdata <= '0;
         endcase
         if (wr && bus_addr == DOTP_LENGTH)
-          length_q <= (bus_wdata[LEN_BITS-1:0] > LEN_BITS'(N)) ? LEN_BITS'(N) : bus_wdata[LEN_BITS-1:0];
+          length_q <= ((|bus_wdata[31:LEN_BITS]) || (bus_wdata[LEN_BITS-1:0] > LEN_BITS'(N)))
+                      ? LEN_BITS'(N) : bus_wdata[LEN_BITS-1:0];
+        // W1C clear is applied first; a coincident fifo_overflow pulse (assigned below,
+        // after this block) wins the same-cycle race so a genuine overflow is never lost.
         if (wr && bus_addr == DOTP_STATUS && bus_wdata[STATUS_OVERFLOW]) ovf_sticky <= 1'b0;
       end
+      if (fifo_overflow) ovf_sticky <= 1'b1;
 
       // FSM
       if (reset_req) begin
         state <= IDLE; acc <= '0; done <= 1'b0; ovf_sticky <= 1'b0; row_idx <= '0;
+        v1 <= 1'b0; v2 <= 1'b0; remaining <= '0; drain_cnt <= '0;
       end else begin
         case (state)
           IDLE: if (start_req) begin
