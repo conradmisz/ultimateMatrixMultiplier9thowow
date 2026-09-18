@@ -1,0 +1,9 @@
+sim/
+firmware/*.elf
+firmware/*.bin
+firmware/*.hex
+firmware/*.o
+firmware/*.map
+*.fst
+*.vcd
+.DS_Store
