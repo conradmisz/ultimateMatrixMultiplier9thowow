@@ -25,8 +25,14 @@ SRCS_soc_top     = $(PKG) rtl/gpio.sv rtl/mac_lane.sv rtl/adder_tree.sv rtl/scra
 
 TESTS = gpio mac_lane adder_tree scratchpad result_fifo bus_decoder ram32 dotp_ctrl soc_top
 
+VFLAGS_ram32 = -GBYTES=4096 -GINIT_FROM_PLUSARG=1
+ARGS_ram32   = +hex=tb/data/ram_test.hex
+
 .PHONY: all lint firmware test test-models clean waves
 .SECONDEXPANSION:
+# Keep sim/tb_<name> binaries around after each run (not deleted as chained-rule
+# intermediates) so `make waves` can still find them.
+.SECONDARY:
 
 all: test
 
@@ -38,11 +44,11 @@ firmware:
 
 sim/tb_%: $$(SRCS_$$*) tb/tb_%.cpp tb/common/harness.h tb/common/bus.h tb/common/models.h firmware/dotp_ref.h firmware/memmap.h
 	@mkdir -p sim
-	$(VERILATOR) $(VFLAGS) --top-module $* --Mdir sim/obj_$* -o ../tb_$* $(SRCS_$*) tb/tb_$*.cpp
+	$(VERILATOR) $(VFLAGS) $(VFLAGS_$*) --top-module $* --Mdir sim/obj_$* -o ../tb_$* $(SRCS_$*) tb/tb_$*.cpp
 
 test-soc_top: firmware
 test-%: sim/tb_%
-	@for s in $(SEEDS); do sim/tb_$* --seed $$s $(ARGS) || exit 1; done
+	@for s in $(SEEDS); do sim/tb_$* --seed $$s $(ARGS_$*) $(ARGS) || exit 1; done
 
 sim/test_models: tb/test_models.cpp tb/common/models.h firmware/dotp_ref.h
 	@mkdir -p sim
