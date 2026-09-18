@@ -7,3 +7,4 @@ firmware/*.map
 *.fst
 *.vcd
 .DS_Store
+.superpowers/
